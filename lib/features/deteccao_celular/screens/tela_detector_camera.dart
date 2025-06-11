@@ -4,7 +4,7 @@ import 'package:image/image.dart' as img_lib;
 import 'package:logger/logger.dart';
 import 'dart:io';
 import 'dart:ui' as ui;
-
+import 'package:detector_celular_app/arquivos_principais/servico_notificacao.dart';
 import 'package:detector_celular_app/features/deteccao_celular/data/servico_detector.dart'; 
 import 'package:detector_celular_app/features/deteccao_celular/domain/entidades/resultado_deteccao.dart'; 
 import 'package:detector_celular_app/componentes_compartilhados/utilidades/util_imagens.dart';
@@ -28,7 +28,8 @@ class _EstadoTelaDetectorCamera extends State<TelaDetectorCamera> with WidgetsBi
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
-    _inicializarCameraEModelo(); 
+    _inicializarCameraEModelo();
+    ServicoNotificacao.inicializar(); 
   }
 
   Future<void> _inicializarCameraEModelo() async { 
@@ -85,35 +86,47 @@ class _EstadoTelaDetectorCamera extends State<TelaDetectorCamera> with WidgetsBi
     }
   }
 
-  void _iniciarStreamDeImagens() { 
-    if (_controladorCamera == null || !_controladorCamera!.value.isInitialized) { 
-      _logger.w('TelaDetectorCamera: Câmera não inicializada para stream.');
-      return;
-    }
-
-    _controladorCamera!.startImageStream((CameraImage imagem) async { 
-      if (!_estaDetectando) { 
-        _estaDetectando = true; 
-        try {
-          final img_lib.Image? imagemConvertida = UtilImagens.converterImagemCamera(imagem); 
-          if (imagemConvertida != null) {
-            final resultados = await _servicoDetector.detectar(imagemConvertida); 
-            if (mounted) {
-              setState(() {
-                _deteccoes = resultados; 
-              });
-            }
-          } else {
-            _logger.w('TelaDetectorCamera: Formato de imagem da câmera não suportado ou erro na conversão.');
-          }
-        } catch (e) {
-          _logger.e('TelaDetectorCamera: Erro durante a detecção do frame: $e');
-        } finally {
-          _estaDetectando = false; 
+  void _iniciarStreamDeImagens() {
+        if (_controladorCamera == null || !_controladorCamera!.value.isInitialized) {
+          _logger.w('TelaDetectorCamera: Câmera não inicializada para stream.');
+          return;
         }
+
+  
+        _controladorCamera!.startImageStream((CameraImage imagem) async {
+          if (!_estaDetectando) {
+            _estaDetectando = true; 
+            try {
+              final img_lib.Image? imagemConvertida = UtilImagens.converterImagemCamera(imagem);
+              if (imagemConvertida != null) {
+                final resultados = await _servicoDetector.detectar(imagemConvertida);
+                
+                if (mounted) {
+                  setState(() {
+                    _deteccoes = resultados; 
+                  });
+
+      
+                  if (resultados.isNotEmpty) {
+                    _logger.i('TelaDetectorCamera: Celular(es) detectado(s)! Exibindo notificação.');
+                    ServicoNotificacao.mostrarNotificacao(
+                      id: 0, 
+                      titulo: 'Celular Detectado!',
+                      corpo: 'Um ou mais celulares foram encontrados em sua vizinhança.',
+                    );
+                  }
+                }
+              } else {
+                _logger.w('TelaDetectorCamera: Formato de imagem da câmera não suportado ou erro na conversão.');
+              }
+            } catch (e) {
+              _logger.e('TelaDetectorCamera: Erro durante a detecção do frame: $e');
+            } finally {
+              _estaDetectando = false;
+            }
+          }
+        });
       }
-    });
-  }
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
@@ -190,6 +203,35 @@ class _EstadoTelaDetectorCamera extends State<TelaDetectorCamera> with WidgetsBi
           ),
         ],
       ),
+      floatingActionButton: FloatingActionButton(
+      backgroundColor: Theme.of(context).colorScheme.secondary,
+      foregroundColor: Theme.of(context).colorScheme.onSecondary,
+      onPressed: () async {
+        if (_deteccoes.isNotEmpty) {
+          _logger.i('TelaDetectorCamera: Tentando salvar imagem com detecções...');
+          final caminhoSalvo = await _servicoDetector.salvarImagemComDeteccao();
+          if (mounted) {
+            if (caminhoSalvo != null) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(content: Text('Imagem salva em: $caminhoSalvo')),
+              );
+            } else {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text('Falha ao salvar imagem.')),
+              );
+            }
+          }
+        } else {
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text('Nenhuma detecção para salvar.')),
+            );
+          }
+        }
+      },
+        child: const Icon(Icons.camera_alt), 
+    ),
+        floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat, 
     );
   }
 }

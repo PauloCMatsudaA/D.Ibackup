@@ -1,6 +1,5 @@
-<<<<<<< HEAD
 # App_detector_celular
-=======
+
 # celular_detector_app
 
 A new Flutter project.
