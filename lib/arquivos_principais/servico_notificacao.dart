@@ -41,7 +41,7 @@ class ServicoNotificacao {
       channelDescription: 'Canal para alertas de detecção de celular',
       importance: Importance.max, 
       priority: Priority.high,
-      sound: RawResourceAndroidNotificationSound('alerta_celular'), 
+      //sound: RawResourceAndroidNotificationSound('alerta_celular'), 
       playSound: true,
       enableVibration: true,
       vibrationPattern: Int64List.fromList([0, 1000, 500, 1000]),

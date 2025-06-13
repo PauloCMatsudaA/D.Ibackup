@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "32799937812",
+    "project_id": "celular-376f9",
+    "storage_bucket": "celular-376f9.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:32799937812:android:e1f85f458c8042a8195e01",
+        "android_client_info": {
+          "package_name": "com.example.celular_detector_app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBNHJM8eHPNWqlX17upo7ERZskeC_WB704"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
